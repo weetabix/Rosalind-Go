@@ -15,7 +15,8 @@ func TestCountDNABases(t *testing.T) {
 			"C": 1,
 			"G": 1,
 			"T": 1,
-		}},
+		},
+		},
 	}
 	for _, tt := range tests {
 		if gotResult := countDNABases(string(tt.input)); !cmp.Equal(gotResult, tt.wantResult) {
