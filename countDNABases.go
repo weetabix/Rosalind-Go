@@ -2,27 +2,31 @@ package main
 
 import "fmt"
 
-var DNA string = "AGCTGCAT"
-var baseMaps = map[string]int{
-	"A": 0,
-	"G": 0,
-	"C": 0,
-	"T": 0,
-}
+var DNA string = "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC"
 
-func main() {
-	for _, element := range DNA {
-		switch string(element) {
+func countDNABases(strand string) map[string]int {
+	var baseMaps = map[string]int{
+		"A": 0,
+		"C": 0,
+		"G": 0,
+		"T": 0,
+	}
+	for _, base := range strand {
+		switch string(base) {
 		case "A":
 			baseMaps["A"] += 1
-		case "G":
-			baseMaps["G"] += 1
 		case "C":
 			baseMaps["C"] += 1
+		case "G":
+			baseMaps["G"] += 1
 		case "T":
 			baseMaps["T"] += 1
 		}
 	}
 	//	fmt.Print(baseMaps)
-	fmt.Println(baseMaps["A"], baseMaps["G"], baseMaps["C"], baseMaps["T"])
+	return baseMaps
+}
+
+func main() {
+	fmt.Println(countDNABases(DNA))
 }
