@@ -24,3 +24,17 @@ func TestCountDNABases(t *testing.T) {
 		}
 	}
 }
+
+func TestTransDNAToRNA(t *testing.T) {
+	tests := []struct {
+		input      string
+		wantResult string
+	}{
+		{"GATGGAACTTGACTACGTAAATT", "GAUGGAACUUGACUACGUAAAUU"},
+	}
+	for _, tt := range tests {
+		if gotResult := transDNAToRNA(tt.input); !cmp.Equal(gotResult, tt.wantResult) {
+			t.Errorf("countDNABases(%v) = %v, want %v", tt.input, gotResult, tt.wantResult)
+		}
+	}
+}
