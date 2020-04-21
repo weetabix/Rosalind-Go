@@ -38,3 +38,6 @@ func TestTransDNAToRNA(t *testing.T) {
 		}
 	}
 }
+
+//AAAACCCGGT
+//ACCGGGTTTT
