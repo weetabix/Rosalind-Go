@@ -5,6 +5,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/moovweb/rubex"
 	"os"
+	"strings"
 )
 
 var configfile = "vars.yml"
@@ -14,6 +15,7 @@ type Config struct {
 	DNARNA      string `yaml:"dnarna"`
 	Rcom        string `yaml:"rcom"`
 	Gcstrand    string `yaml:"gcstrand"`
+	Gcstrands   string `yaml:"gcstrands"`
 	Subtosearch string `yaml:"subtosearch"`
 	Tosearch    string `yaml:"tosearch"`
 }
@@ -124,18 +126,48 @@ func stringMatch(tosearch string, subtosearch string) []int {
 	return outList
 }
 
-func gcContent(strand string) float64 {
-	var gcCount = 0
-	for _, base := range strand {
-		switch string(base) {
-
-		case "C", "G":
-			gcCount++
+func splitFASTA(strands string) map[string]string {
+	var fastaMap = make(map[string]string)
+	splitstrands := strings.Split(strands, ">")
+	for _, s := range splitstrands {
+		if s != "" {
+			s = strings.Replace(s, "\n", " ", 1)
+			s = strings.Replace(s, "\n", "", -1)
+			sarr := strings.Split(s, " ")
+			fastaMap[sarr[0]] = sarr[len(sarr)-1]
 		}
 	}
-	//	fmt.Print(baseMaps)
-	return float64(gcCount) / float64(len(strand)) * 100
+	return fastaMap
 }
+
+func gcContent(inputstring string) string {
+	var gcMap = splitFASTA(inputstring)
+	var resMap = make(map[string]float64)
+	var outMap = make(map[string]float64)
+	var outval = float64(0)
+	var outStr = ""
+	for k, strand := range gcMap {
+		var gcCount = 0
+		for _, base := range strand {
+			switch string(base) {
+			case "C", "G":
+				gcCount++
+			}
+		}
+		resMap[k] = (float64(gcCount) / float64(len(strand)) * 100)
+	}
+	for k, v := range resMap {
+		if v > outval {
+			outval = v
+			outMap[k] = v
+		}
+	}
+	for k, v := range outMap {
+		outStr = fmt.Sprintf("%s\n%f", k, v)
+	}
+	return outStr
+}
+
 func main() {
 
 	var config Config
@@ -154,11 +186,10 @@ func main() {
 	// Reverse Compliment
 	fmt.Println(reverseCompliment(config.Rcom))
 
-	for _, v := range stringMatch(config.Tosearch, config.Subtosearch) {
-		fmt.Printf("%d ", v)
-	}
+	//		for _, v := range stringMatch(config.Tosearch, config.Subtosearch) {
+	//			fmt.Printf("%d ", v)
+	//TODO		}
 
-	fmt.Println()
-	fmt.Println(gcContent(config.Gcstrand))
-
+	// Calculate GC Content
+	fmt.Println(gcContent(config.Gcstrands))
 }
