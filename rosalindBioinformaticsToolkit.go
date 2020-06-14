@@ -11,13 +11,15 @@ import (
 var configfile = "vars.yml"
 
 type Config struct {
-	DNA         string `yaml:"dna"`
-	DNARNA      string `yaml:"dnarna"`
-	Rcom        string `yaml:"rcom"`
-	Gcstrand    string `yaml:"gcstrand"`
-	Gcstrands   string `yaml:"gcstrands"`
-	Subtosearch string `yaml:"subtosearch"`
-	Tosearch    string `yaml:"tosearch"`
+	DNA          string `yaml:"dna"`
+	DNARNA       string `yaml:"dnarna"`
+	Rcom         string `yaml:"rcom"`
+	Gcstrand     string `yaml:"gcstrand"`
+	Gcstrands    string `yaml:"gcstrands"`
+	Subtosearch  string `yaml:"subtosearch"`
+	Tosearch     string `yaml:"tosearch"`
+	HammingPair  string `yaml:"hamming_pair"`
+	DNAToProtein string `yaml:"dnatoprotein"`
 }
 
 func readCfgFile(cfg *Config) {
@@ -29,7 +31,6 @@ func readCfgFile(cfg *Config) {
 		panic(err)
 	}
 	defer f.Close()
-
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)
 	if err != nil {
@@ -39,7 +40,7 @@ func readCfgFile(cfg *Config) {
 }
 
 func countDNABases(strand string) map[string]int {
-	var basesMap = map[string]int{
+	bMap := map[string]int{
 		"A": 0,
 		"C": 0,
 		"G": 0,
@@ -49,17 +50,17 @@ func countDNABases(strand string) map[string]int {
 		switch string(base) {
 
 		case "A":
-			basesMap["A"] += 1
+			bMap["A"] += 1
 		case "C":
-			basesMap["C"] += 1
+			bMap["C"] += 1
 		case "G":
-			basesMap["G"] += 1
+			bMap["G"] += 1
 		case "T":
-			basesMap["T"] += 1
+			bMap["T"] += 1
 		}
 	}
 	//	fmt.Print(baseMaps)
-	return basesMap
+	return bMap
 }
 
 func transDNAToRNA(strand string) string {
@@ -89,7 +90,7 @@ func reverse(value string) string {
 }
 
 func reverse2(inString string) string {
-	var outString = ""
+	outString := ""
 	for _, base := range inString {
 		outString = string(base) + outString
 	}
@@ -98,7 +99,7 @@ func reverse2(inString string) string {
 
 func reverseCompliment(strand string) string {
 	var revStrand = reverse2(strand)
-	var outStrand = ""
+	outStrand := ""
 	for _, base := range revStrand {
 		switch string(base) {
 
@@ -127,7 +128,7 @@ func stringMatch(tosearch string, subtosearch string) []int {
 }
 
 func splitFASTA(strands string) map[string]string {
-	var fastaMap = make(map[string]string)
+	fastaMap := make(map[string]string)
 	splitstrands := strings.Split(strands, ">")
 	for _, s := range splitstrands {
 		if s != "" {
@@ -142,12 +143,12 @@ func splitFASTA(strands string) map[string]string {
 
 func gcContent(inputstring string) string {
 	var gcMap = splitFASTA(inputstring)
-	var resMap = make(map[string]float64)
-	var outMap = make(map[string]float64)
-	var outval = float64(0)
-	var outStr = ""
+	resMap := make(map[string]float64)
+	outMap := make(map[string]float64) //TODO Pair struct
+	outval := float64(0)               // make an interface for percentages i.e. entry.perc()
+	outStr := ""
 	for k, strand := range gcMap {
-		var gcCount = 0
+		gcCount := 0
 		for _, base := range strand {
 			switch string(base) {
 			case "C", "G":
@@ -168,8 +169,103 @@ func gcContent(inputstring string) string {
 	return outStr
 }
 
-func main() {
+func hammingCount(inputstring string) int {
+	hamm := 0
+	rawPair := strings.Split(inputstring, "\n")
+	for k, _ := range rawPair[0] {
+		if rawPair[0][k] != rawPair[1][k] {
+			hamm++
+		}
+	}
+	return hamm
+}
 
+func rnaToProtein(rs string) string {
+	var ps []string
+	r, _ := rubex.Compile(".{3}")
+	m := r.FindAllStringSubmatch(rs, -1)
+	for _, trip := range m {
+		switch string(trip[0]) {
+		case "GCU", "GCC", "GCA", "GCG":
+			ps = append(ps, "A")
+		case "UGU", "UGC":
+			ps = append(ps, "C")
+		case "GAU", "GAC":
+			ps = append(ps, "D")
+		case "GAA", "GAG":
+			ps = append(ps, "E")
+		case "UUU", "UUC":
+			ps = append(ps, "F")
+		case "GGU", "GGC", "GGA", "GGG":
+			ps = append(ps, "G")
+		case "CAU", "CAC":
+			ps = append(ps, "H")
+		case "AUU", "AUC", "AUA":
+			ps = append(ps, "I")
+		case "AAA", "AAG":
+			ps = append(ps, "K")
+		case "UUA", "UUG", "CUU", "CUC", "CUA", "CUG":
+			ps = append(ps, "L")
+		case "AUG":
+			ps = append(ps, "M")
+		case "AAU", "AAC":
+			ps = append(ps, "N")
+		case "CCU", "CCC", "CCA", "CCG":
+			ps = append(ps, "P")
+		case "CAA", "CAG":
+			ps = append(ps, "Q")
+		case "AGA", "AGG", "CGU", "CGC", "CGA", "CGG":
+			ps = append(ps, "R")
+		case "UCU", "UCC", "UCA", "UCG", "AGU", "AGC":
+			ps = append(ps, "S")
+		case "ACU", "ACC", "ACA", "ACG":
+			ps = append(ps, "T")
+		case "GUU", "GUC", "GUA", "GUG":
+			ps = append(ps, "V")
+		case "UGG":
+			ps = append(ps, "W")
+		case "UAU", "UAC":
+			ps = append(ps, "Y")
+		case "UAA", "UAG", "UGA":
+			//	ps = ps + "Stop"
+			break
+		}
+	}
+	return strings.Join(ps, "")
+}
+
+func proteinMass(inString string) float64 {
+	total := float64(0)
+	massTable := map[string]float64{
+		"A": 71.03711,
+		"C": 103.00919,
+		"D": 115.02694,
+		"E": 129.04259,
+		"F": 147.06841,
+		"G": 57.02146,
+		"H": 137.05891,
+		"I": 113.08406,
+		"K": 128.09496,
+		"L": 113.08406,
+		"M": 131.04049,
+		"N": 114.04293,
+		"P": 97.05276,
+		"Q": 128.05858,
+		"R": 156.10111,
+		"S": 87.03203,
+		"T": 101.04768,
+		"V": 99.06841,
+		"W": 186.07931,
+		"Y": 163.06333,
+	}
+	for _, x := range inString {
+		total = total + massTable[string(x)]
+	}
+	//fmt.Println(total)
+	return total
+}
+
+func main() {
 	var config Config
 	readCfgFile(&config)
 	//	fmt.Printf("%+v", config)
@@ -186,10 +282,15 @@ func main() {
 	// Reverse Compliment
 	fmt.Println(reverseCompliment(config.Rcom))
 
-	//		for _, v := range stringMatch(config.Tosearch, config.Subtosearch) {
-	//			fmt.Printf("%d ", v)
-	//TODO		}
+	fmt.Println()
+	for _, v := range stringMatch(config.Tosearch, config.Subtosearch) {
+		fmt.Printf("%d ", v)
+	}
+	fmt.Println()
 
 	// Calculate GC Content
 	fmt.Println(gcContent(config.Gcstrands))
+	fmt.Println(hammingCount(config.HammingPair))
+	fmt.Println(rnaToProtein(config.DNAToProtein))
+	fmt.Println(proteinMass("SKADYEK"))
 }
