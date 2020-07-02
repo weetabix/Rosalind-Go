@@ -267,65 +267,33 @@ func proteinMass(inString string) float64 {
 
 func fibSeq(gen int, off int) int {
 	i := 1
-
 	j := 1
 	t := 0 // Total this generation
 
-	for x := 0; x < gen; x++ {
+	g := gen // Generations
+	o := off // Offspring per generation
+	for x := 0; x < g; x++ {
 		t = j
-		j, i = i, i+(t*off)
+		j, i = i/2, i+(t*o)
 		fmt.Println(t)
 	}
 	return t
 }
 
-func fibSeqMort(gen float64, off float64, span int) float64 {
-	i := float64(1)
+func fibSeqMort(gen int, off int) int {
+	i := 1
+	j := 1
+	t := 0 // Total this generation
 
-	j := float64(1)
-	t := float64(0) // Total this generation
-
-	apr := []float64{}
-	//	if span == 0 {
-	//		return fibSeq(gen, off)
-	//	}
-	for x := 0; x < span; x++ {
-		apr = append(apr, 0)
-	}
-	for x := float64(0); x < gen; x++ {
-		j = j - apr[int(x)]
+	g := gen // Generations
+	o := off // Offspring per generation
+	for x := 0; x < g; x++ {
 		t = j
-		j, i = i, i+(t*off)
-		apr = append(apr, j)
+		j, i = i, i+(t*o)
 		fmt.Println(t)
 	}
 	return t
 }
-
-//func fibSeqMort2(gen int, off int) int {
-//	i := 1
-//	j := 1
-//	k := 1
-//	l := 1
-//	t := 0   // Total this generation
-//	m := 0   // Mortality
-//	g := gen // Generations
-//	o := off // Offspring per generation
-//	for x := 0; x < g; x++ {
-//		t = j
-//		j, i = i, i+(t*o)
-//		fmt.Println(t)
-//		if x < 2 {
-//			for y := 0; y < 2; y++ {
-//				m = k
-//				l, k = l, l+(m*o)
-//				fmt.Printf("M%d", m)
-//				fmt.Println()
-//			}
-//		}
-//	}
-//	return t
-//}
 func main() {
 	var config Config
 	readCfgFile(&config)
@@ -348,16 +316,11 @@ func main() {
 		fmt.Printf("%d ", v)
 	}
 	fmt.Println()
-	fmt.Println()
-	fmt.Println()
 
 	// Calculate GC Content
 	//fmt.Println(gcContent(config.Gcstrands))
 	//fmt.Println(hammingCount(config.HammingPair))
 	//fmt.Println(rnaToProtein(config.DNAToProtein))
 	//fmt.Println(proteinMass("SKADYEK"))
-	//fmt.Println(fibSeq(9, 7))
-	//fmt.Println()
-	//fmt.Println(fibSeqMort(6, 3))
-	fmt.Printf("%f", fibSeqMort(96, 1, 20))
+	fmt.Println(fibSeq(6, 3))
 }
