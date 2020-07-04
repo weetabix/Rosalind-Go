@@ -166,16 +166,10 @@ func rnaToProtein(protable map[string][]string, rs string) string {
 	return strings.Split(strings.Join(ps, ""), "Stop")[0]
 }
 
-func proteinToRna(protable map[string][]string, ps string, mod int) int {
-	var comb = 4 //Stop Codons
+func proteinToRna(protable map[string][]string, ps string) int {
+	var comb int
 	for _, v := range ps {
-		fmt.Println(string(v))
-		comb = comb * len(protable[string(v)])
-		if comb > mod {
-			fmt.Println("trim")
-			comb = comb % 1000000
-		}
-		fmt.Println(comb)
+		fmt.Println(protable[string(v)])
 	}
 	return comb
 }
@@ -293,7 +287,7 @@ func main() {
 	// Calculate GC Content
 	fmt.Println()
 	//fmt.Println(rnaToProtein(config.RNAprotable, config.Vars["dnatoprotein"]))
-	fmt.Println(proteinToRna(config.RNAprotable, config.Vars["protorna"], 1000000))
+	fmt.Println(rnaToProtein(config.RNAprotable, "MA"))
 	//fmt.Println(proteinMass("SKADYEK"))
 	//fmt.Println()
 	//fmt.Println(fibSeq(9, 7))
