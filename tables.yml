@@ -103,7 +103,7 @@ rnaprotable:
   Y:
     - UAU
     - UAC
-  Stop:
+  ß: #Stop Codon
     - UAA
     - UAG
     - UGA

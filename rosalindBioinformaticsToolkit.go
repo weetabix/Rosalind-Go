@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/goccy/go-yaml"
 	"github.com/moovweb/rubex"
+	"gonum.org/v1/gonum/stat/combin"
 	"io/ioutil"
 	"strings"
 )
@@ -91,7 +92,7 @@ func reverseCompliment(strand string) string {
 	return outStrand
 }
 
-func stringMatch(tosearch string, subtosearch string) []int {
+func stringMatchIndexes(tosearch string, subtosearch string) []int {
 	var outList []int
 	r, _ := rubex.Compile(subtosearch)
 	m := r.FindAllStringSubmatchIndex(tosearch, -1)
@@ -154,6 +155,17 @@ func hammingCount(inputstring string) int {
 	return hamm
 }
 
+func findRNA(slices map[string][]string, match string) (string, int, bool) {
+	for i, v := range slices {
+		for j, rna := range v {
+			if rna == match {
+				return i, j, true
+			}
+		}
+	}
+	return "-1", -1, false
+}
+
 func rnaToProtein(protable map[string][]string, rs string) string {
 	var ps []string
 	r, _ := rubex.Compile(".{3}")
@@ -166,18 +178,30 @@ func rnaToProtein(protable map[string][]string, rs string) string {
 	return strings.Split(strings.Join(ps, ""), "Stop")[0]
 }
 
-func proteinToRna(protable map[string][]string, ps string, mod int) int {
-	var comb = 4 //Stop Codons
-	for _, v := range ps {
-		fmt.Println(string(v))
-		comb = comb * len(protable[string(v)])
-		if comb > mod {
-			fmt.Println("trim")
-			comb = comb % 1000000
+func modMult(a int, b int, m int) int { // protable map[string][]string, ps string, mod int) int {
+	res := 0
+	a = a % m
+	for b > 0 {
+		if b%2 != 0 {
+			res = (res + a) % m
 		}
-		fmt.Println(comb)
+		a = (2 * a) % m
+		b = b / 2
 	}
-	return comb
+	return res
+}
+
+func proteinToRna(protable map[string][]string, ps string, mod int) int {
+	a := 1
+	ps = ps + "ß" // Adding Stop Codon
+	for _, v := range ps {
+		b := len(protable[string(v)])
+		//fmt.Printf("a: %d b: %d mod: %d ", a, b, mod)
+		//fmt.Println()
+		a = modMult(a, b, mod)
+
+	}
+	return a
 }
 
 func proteinMass(masstable map[string]float64, inString string) float64 {
@@ -201,7 +225,25 @@ func fibSeq(gen int, off int) int {
 	return t
 }
 
+func positivePermutations(n int, k int) [][]int {
+	perms := combin.Permutations(n, k)
+	for _, v := range perms {
+		for i := range v {
+			v[i]++
+		}
+	}
+	return perms
+}
+
+func rnaSplice(fastaString string) string {
+	fastaMap := splitFASTA(fastaString)
+	rawStrand := fastaMap[0]
+	//	fmt.Println(stringMatchIndexes(rawStrand, fastaMap[1]
+	return ("Foo")
+}
+
 /* func fibSeqMort(gen float64, off float64, span int) float64 {
+	//FIXME
 	i := float64(1)
 
 	j := float64(1)
@@ -225,6 +267,7 @@ func fibSeq(gen int, off int) int {
 } */
 
 /* func fibSeqMort2(gen int, off int) int {
+	//FIXME
 	i := 1
 	j := 1
 	k := 1
@@ -249,17 +292,7 @@ func fibSeq(gen int, off int) int {
 	return t
 } */
 
-func findRNA(slices map[string][]string, match string) (string, int, bool) {
-	for i, v := range slices {
-		for j, rna := range v {
-			if rna == match {
-				return i, j, true
-			}
-		}
-	}
-	return "-1", -1, false
-}
-
+// TODO compress the protein data into one multi-map
 func main() {
 	var config Config
 	yamlFile, err := ioutil.ReadFile(configfile)
@@ -285,17 +318,25 @@ func main() {
 	// Reverse Compliment
 	//fmt.Println(reverseCompliment(config.Rcom))
 
-	//fmt.Println()
-	//	for _, v := range stringMatch(config.Vars["tosearch"], config.Subtosearch) {
-	//		fmt.Printf("%d ", v)
-	//	}
+	fmt.Println()
+	for _, v := range stringMatchIndexes(config.Vars["tosearch"], config.Vars["subtosearch"]) {
+		fmt.Printf("%d ", v)
+	}
 
 	// Calculate GC Content
-	fmt.Println()
 	//fmt.Println(rnaToProtein(config.RNAprotable, config.Vars["dnatoprotein"]))
 	fmt.Println(proteinToRna(config.RNAprotable, config.Vars["protorna"], 1000000))
-	//fmt.Println(proteinMass("SKADYEK"))
-	//fmt.Println()
+	//fmt.Println(modMult(1, 1, 1000000))
+	fmt.Println(proteinMass(config.Masstable, config.Vars["promass"]))
+	//fmt.Println(len(positivePermutations(21, 7)))
+	fmt.Println((combin.NumPermutations(91, 9) % 1000000))
+	rnaSplice(config.Vars["rnasplice"])
+	//for _, v := range positivePermutations(5, 5) {
+	//		for _, i := range v {
+	//			fmt.Printf("%d ", i)
+	//		}
+	//		fmt.Println()
+	//	}
 	//fmt.Println(fibSeq(9, 7))
 	//fmt.Println(fibSeqMort(6, 3))
 	//	fmt.Printf("%f", fibSeqMort(96, 1, 20))
