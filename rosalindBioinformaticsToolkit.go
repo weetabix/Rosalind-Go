@@ -102,35 +102,42 @@ func stringMatchIndexes(tosearch string, subtosearch string) []int {
 	return outList
 }
 
-func splitFASTA(strands string) map[string]string {
-	fastaMap := make(map[string]string)
+type fastaPair struct {
+	Name string
+	Data string
+}
+
+func splitFASTA(strands string) []fastaPair {
+	fastaPairs := []fastaPair{}
 	splitstrands := strings.Split(strands, ">")
 	for _, s := range splitstrands {
 		if s != "" {
 			s = strings.Replace(s, "\n", " ", 1)
 			s = strings.Replace(s, "\n", "", -1)
 			sarr := strings.Split(s, " ")
-			fastaMap[sarr[0]] = sarr[len(sarr)-1]
+			p := fastaPair{Name: sarr[0], Data: sarr[len(sarr)-1]}
+			fastaPairs = append(fastaPairs, p)
+			//fastaMap[sarr[0]] = sarr[len(sarr)-1]
 		}
 	}
-	return fastaMap
+	return fastaPairs
 }
 
 func gcContent(inputstring string) string {
-	var gcMap = splitFASTA(inputstring)
+	var gcPairs = splitFASTA(inputstring)
 	resMap := make(map[string]float64)
 	outMap := make(map[string]float64) //TODO Pair struct
 	outval := float64(0)               // make an interface for percentages i.e. entry.perc()
 	outStr := ""
-	for k, strand := range gcMap {
+	for _, strand := range gcPairs {
 		gcCount := 0
-		for _, base := range strand {
+		for _, base := range strand.Data {
 			switch string(base) {
 			case "C", "G":
 				gcCount++
 			}
 		}
-		resMap[k] = (float64(gcCount) / float64(len(strand)) * 100)
+		resMap[strand.Name] = (float64(gcCount) / float64(len(strand.Data)) * 100)
 	}
 	for k, v := range resMap {
 		if v > outval {
@@ -172,13 +179,13 @@ func rnaToProtein(protable map[string][]string, rs string) string {
 	m := r.FindAllStringSubmatch(rs, -1)
 	for _, trip := range m {
 		prot, _, _ := findRNA(protable, string(trip[0]))
-		fmt.Println(prot)
+		//fmt.Println(prot)
 		ps = append(ps, prot)
 	}
 	return strings.Split(strings.Join(ps, ""), "Stop")[0]
 }
 
-func modMult(a int, b int, m int) int { // protable map[string][]string, ps string, mod int) int {
+func modMult(a int, b int, m int) int {
 	res := 0
 	a = a % m
 	for b > 0 {
@@ -235,11 +242,16 @@ func positivePermutations(n int, k int) [][]int {
 	return perms
 }
 
-func rnaSplice(fastaString string) string {
-	fastaMap := splitFASTA(fastaString)
-	rawStrand := fastaMap[0]
-	//	fmt.Println(stringMatchIndexes(rawStrand, fastaMap[1]
-	return ("Foo")
+func rnaSplice(protable map[string][]string, fastaString string) string {
+	fastaPairs := splitFASTA(fastaString)
+	dnaString := fastaPairs[0].Data
+	for _, p := range fastaPairs[1:] {
+
+		dnaString = strings.ReplaceAll(dnaString, p.Data, "")
+	}
+	rnaString := transDNAToRNA(dnaString)
+	res := rnaToProtein(protable, rnaString)
+	return (res)
 }
 
 /* func fibSeqMort(gen float64, off float64, span int) float64 {
@@ -325,12 +337,18 @@ func main() {
 
 	// Calculate GC Content
 	//fmt.Println(rnaToProtein(config.RNAprotable, config.Vars["dnatoprotein"]))
-	fmt.Println(proteinToRna(config.RNAprotable, config.Vars["protorna"], 1000000))
+	fmt.Println()
+	//fmt.Println(gcContent(config.Vars["gcstrands"]))
+	fmt.Println()
+	//fmt.Println(proteinToRna(config.RNAprotable, config.Vars["protorna"], 1000000))
+	fmt.Println()
 	//fmt.Println(modMult(1, 1, 1000000))
-	fmt.Println(proteinMass(config.Masstable, config.Vars["promass"]))
+	//fmt.Println(proteinMass(config.Masstable, config.Vars["promass"]))
+	fmt.Println()
 	//fmt.Println(len(positivePermutations(21, 7)))
-	fmt.Println((combin.NumPermutations(91, 9) % 1000000))
-	rnaSplice(config.Vars["rnasplice"])
+	//fmt.Println((combin.NumPermutations(91, 9) % 1000000))
+	fmt.Println()
+	fmt.Println(strings.TrimSuffix(rnaSplice(config.RNAprotable, config.Vars["rnasplice"]), "ß")) // Trim stop codon.
 	//for _, v := range positivePermutations(5, 5) {
 	//		for _, i := range v {
 	//			fmt.Printf("%d ", i)
